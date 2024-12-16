@@ -7,7 +7,7 @@ This project demonstrates how to build and upload a binary for Raspberry Pi usin
 1. Clone the repository to your local machine:
 
     ```bash
-    git clone https://github.com/usernamey-pi-binary-pipeline.git
+    git clone https://github.com/Asuthar1026/raspberry-pi-binary-pipeline.git
     cd raspberry-pi-binary-pipeline
     ```
 
