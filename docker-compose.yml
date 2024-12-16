@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  builder:
+    build: .
+    volumes:
+      - .:/app
+    command: sh /app/build.sh
+
+  uploader:
+    image: curlimages/curl:latest  # Use curl to upload the release
+    environment:
+      GITHUB_TOKEN: ${GITHUB_TOKEN}  # Ensure your GitHub token is passed here
+      TAG_NAME: "v1.0.0"  # Set your release tag here
+      FILE_PATH: "/app/output-binary"  # Path to the binary you want to upload
+      OWNER: "Asuthar1026" # your GitHub username
+      REPO: "raspberry-pi-binary-pipeline" # repo name
+    volumes:
+      - .:/app
+    entrypoint: >
+      /bin/sh -c '
+        RELEASE_ID=$(curl -s -H "Authorization: token ${GITHUB_TOKEN}" \
+        "https://api.github.com/repos/${OWNER}/${REPO}/releases/tags/${TAG_NAME}" | jq -r .id);
+        
+        if [ "${RELEASE_ID}" == "null" ]; then
+          RELEASE_ID=$(curl -s -X POST -H "Authorization: token ${GITHUB_TOKEN}" \
+          -d "{\"tag_name\": \"${TAG_NAME}\", \"name\": \"${TAG_NAME}\"}" \
+          "https://api.github.com/repos/${OWNER}/${REPO}/releases" | jq -r .id);
+        fi;
+        
+        curl -s -X POST -H "Authorization: token ${GITHUB_TOKEN}" -H "Content-Type: application/octet-stream" \
+        --data-binary @${FILE_PATH} \
+        "https://uploads.github.com/repos/${OWNER}/${REPO}/releases/${RELEASE_ID}/assets?name=$(basename ${FILE_PATH})"
+      '
+    depends_on:
+      - builder
